@@ -8,7 +8,7 @@ class Config(object):
     """配置参数"""
 
     def __init__(self, dataset, embedding):
-        self.model_name = 'RNN'
+        self.model_name = 'LSTM'
         self.train_path = dataset + '/data/train.txt'  # 训练集
         self.dev_path = dataset + '/data/dev.txt'  # 验证集
         self.test_path = dataset + '/data/test.txt'  # 测试集
@@ -28,7 +28,7 @@ class Config(object):
         self.n_vocab = 0  # 词表大小，在运行时赋值
         self.num_epochs = 7  # epoch数
         self.batch_size = 256  # batch size
-        self.pad_size = 7  # 每句话处理成的长度(短填长切)
+        self.pad_size = 32  # 每句话处理成的长度(短填长切)
         self.learning_rate = 1e-3  # 学习率
         self.embed = self.embedding_pretrained.size(1) \
             if self.embedding_pretrained is not None else 300  # 字向量维度， 若使用了预训练词向量，则维度统一
@@ -43,9 +43,9 @@ class Model(nn.Module):
             self.embedding = nn.Embedding.from_pretrained(config.embedding_pretrained, freeze=False)
         else:
             self.embedding = nn.Embedding(config.n_vocab, config.embed, padding_idx=config.n_vocab - 1)
-        self.rnn = nn.RNN(config.embed, config.hidden_size, config.num_layers,
-                          batch_first=True, dropout=config.dropout)
-        self.fc = nn.Linear(config.hidden_size, config.num_classes)
+        self.rnn = nn.LSTM(config.embed, config.hidden_size, config.num_layers, bidirectional=True,
+                           batch_first=True, dropout=config.dropout)
+        self.fc = nn.Linear(config.hidden_size * 2, config.num_classes)
 
     def forward(self, x):
         # 将原始数据转化成密集向量表示 [batch_size, seq_len, embedding]
