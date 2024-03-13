@@ -7,7 +7,7 @@ import argparse
 from utils import build_dataset, build_iterator, get_time_dif
 
 parser = argparse.ArgumentParser(description='Chinese Text Classification')
-parser.add_argument('--model', default='RNN', type=str, required=True,  help='RNN or LSTM')
+parser.add_argument('--model', default='LSTM', type=str, required=True, help='RNN or LSTM')
 parser.add_argument('--embedding', default='pre_trained', type=str, help='random or pre_trained')
 parser.add_argument('--word', default=False, type=bool, help='True for word, False for char')
 args = parser.parse_args()
@@ -42,7 +42,8 @@ if __name__ == '__main__':
     # len(vocab)="<PAD>", len(vocab) -1 ="<UNK>"
     config.n_vocab = len(vocab)
     model = x.Model(config).to(config.device)
-    init_network(model)
+    if model_name != 'Transformer':
+        init_network(model)
     print(model.parameters)
 
     train(config, model, train_iter, dev_iter, test_iter)

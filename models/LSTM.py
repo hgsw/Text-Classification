@@ -27,7 +27,7 @@ class Config(object):
         self.num_classes = len(self.class_list)  # 类别数
         self.n_vocab = 0  # 词表大小，在运行时赋值
         self.num_epochs = 7  # epoch数
-        self.batch_size = 256  # batch size
+        self.batch_size = 64  # batch size
         self.pad_size = 32  # 每句话处理成的长度(短填长切)
         self.learning_rate = 1e-3  # 学习率
         self.embed = self.embedding_pretrained.size(1) \
@@ -45,12 +45,19 @@ class Model(nn.Module):
             self.embedding = nn.Embedding(config.n_vocab, config.embed, padding_idx=config.n_vocab - 1)
         self.rnn = nn.LSTM(config.embed, config.hidden_size, config.num_layers, bidirectional=True,
                            batch_first=True, dropout=config.dropout)
+
+        self.layer_norm = nn.LayerNorm(config.hidden_size * 2)
         self.fc = nn.Linear(config.hidden_size * 2, config.num_classes)
 
     def forward(self, x):
         # 将原始数据转化成密集向量表示 [batch_size, seq_len, embedding]
         out = self.embedding(x[0])
         out, hidden_ = self.rnn(out)
+        # 对LSTM最后一层的最后一个时序的隐藏状态进行规范化
+        out = self.layer_norm(out[:, -1, :])
+
         # out[:, -1, :] seq_len最后时刻的输出等价 hidden_
-        out = self.fc(out[:, -1, :])
+        # out = layer_norm(out[:, -1, :])
+
+        out = self.fc(out)
         return out
